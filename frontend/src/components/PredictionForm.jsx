@@ -76,46 +76,81 @@ export default function PredictionForm({ addToast }) {
     }
   }, [])
 
-  // Handle district selection & auto-populate parameters for exact (state, district)
+  // Validate if district matches one of the filtered suggestions for the selected state
+  const checkDistrictValidity = useCallback((districtName) => {
+    if (!districtName || !districtName.trim()) {
+      return { isValid: false, message: 'This field is required' }
+    }
+    if (districts.length === 0) {
+      return { isValid: false, message: 'Please select a valid state first.' }
+    }
+    const matched = districts.find(d => d.toLowerCase().trim() === districtName.toLowerCase().trim())
+    if (!matched) {
+      return { isValid: false, message: 'Please select a valid district from the list.' }
+    }
+    return { isValid: true, matchedDistrict: matched }
+  }, [districts])
+
+  // Handle district selection & auto-populate parameters
   const handleDistrictChange = useCallback(async (districtName) => {
-    if (!districtName) {
-      setForm(prev => ({ 
-        ...prev, 
-        district: '', 
-        rainfall: '', 
-        population: '', 
-        growth: '', 
-        literacy: '' 
+    setForm(prev => ({ ...prev, district: districtName }))
+
+    if (!districtName || !districtName.trim()) {
+      setErrors(prev => ({ ...prev, district: 'This field is required' }))
+      setAutofillNote('')
+      return
+    }
+
+    const { isValid, matchedDistrict, message } = checkDistrictValidity(districtName)
+
+    if (!isValid) {
+      setErrors(prev => ({ ...prev, district: message }))
+      setForm(prev => ({
+        ...prev,
+        rainfall: '',
+        population: '',
+        growth: '',
+        literacy: ''
       }))
       setAutofillNote('')
       return
     }
 
-    setForm(prev => ({ ...prev, district: districtName }))
+    // District is valid and belongs to the state
     setErrors(prev => ({ ...prev, district: '' }))
-    setAutofillNote('Fetching parameters for district...')
+    setAutofillNote('Fetching district parameters...')
 
     try {
-      // Pass both state and district for exact dataset lookup
       const url = form.state 
-        ? `${API_BASE}/rainfall/${encodeURIComponent(form.state)}/${encodeURIComponent(districtName)}`
-        : `${API_BASE}/rainfall/${encodeURIComponent(districtName)}`
+        ? `${API_BASE}/rainfall/${encodeURIComponent(form.state)}/${encodeURIComponent(matchedDistrict)}`
+        : `${API_BASE}/rainfall/${encodeURIComponent(matchedDistrict)}`
         
       const res = await axios.get(url)
       const data = res.data
       setForm(prev => ({
         ...prev,
+        district: matchedDistrict, // normalize capitalization
         rainfall: String(data.monthly_rainfall ? Math.round(data.monthly_rainfall * 10) / 10 : ''),
         population: String(data.population || ''),
         growth: String(data.growth || ''),
         literacy: String(data.literacy || '')
       }))
-      setAutofillNote(`✓ ${districtName} parameters loaded from dataset`)
+      setAutofillNote(`✓ ${matchedDistrict} parameters loaded from dataset`)
     } catch (err) {
-      console.error('Failed to fetch rainfall/metadata for district:', err)
+      console.error('Failed to fetch metadata for district:', err)
       setAutofillNote('')
     }
-  }, [form.state])
+  }, [form.state, checkDistrictValidity])
+
+  // Blur handler for District field to force valid list selection
+  const handleDistrictBlur = (value) => {
+    const { isValid, message } = checkDistrictValidity(value)
+    if (!isValid) {
+      setErrors(prev => ({ ...prev, district: message }))
+    } else {
+      setErrors(prev => ({ ...prev, district: '' }))
+    }
+  }
 
   // Set field value with strict cascading resets
   const updateField = (field, val) => {
@@ -147,11 +182,25 @@ export default function PredictionForm({ addToast }) {
     })
 
     // Strict Validation: District MUST belong to the selected State
-    if (form.state && form.district && districts.length > 0) {
-      const isValidDistrict = districts.some(d => d.toLowerCase().trim() === form.district.toLowerCase().trim())
-      if (!isValidDistrict) {
-        newErrors.district = `'${form.district}' is not a valid district in ${form.state}`
-      }
+    const districtCheck = checkDistrictValidity(form.district)
+    if (!districtCheck.isValid) {
+      newErrors.district = districtCheck.message
+    }
+
+    // Strict Validation: State, Crop, Season must be valid items from suggestions
+    if (form.state && states.length > 0) {
+      const isValidState = states.some(s => s.toLowerCase().trim() === form.state.toLowerCase().trim())
+      if (!isValidState) newErrors.state = 'Please select a valid state from the list.'
+    }
+
+    if (form.crop && crops.length > 0) {
+      const isValidCrop = crops.some(c => c.toLowerCase().trim() === form.crop.toLowerCase().trim())
+      if (!isValidCrop) newErrors.crop = 'Please select a valid crop from the list.'
+    }
+
+    if (form.season && seasons.length > 0) {
+      const isValidSeason = seasons.some(s => s.toLowerCase().trim() === form.season.toLowerCase().trim())
+      if (!isValidSeason) newErrors.season = 'Please select a valid season from the list.'
     }
 
     // Validate numbers are non-negative
@@ -166,11 +215,19 @@ export default function PredictionForm({ addToast }) {
     return Object.keys(newErrors).length === 0
   }
 
+  const isFormValid = () => {
+    const required = ['state', 'district', 'crop', 'season', 'area', 'production', 'population', 'rainfall']
+    const hasValues = required.every(f => !!String(form[f]).trim())
+    const districtValid = checkDistrictValidity(form.district).isValid
+    const noErrors = Object.keys(errors).every(key => !errors[key])
+    return hasValues && districtValid && noErrors
+  }
+
   // Submit Handler
   const handlePredict = async (e) => {
     e.preventDefault()
     if (!validateForm()) {
-      addToast('Please fix validation errors before submitting', 'warning')
+      addToast('Please select a valid district from the list.', 'warning')
       return
     }
 
@@ -267,6 +324,7 @@ export default function PredictionForm({ addToast }) {
                 label="District *"
                 value={form.district}
                 onChange={handleDistrictChange}
+                onBlur={handleDistrictBlur}
                 suggestions={districts}
                 placeholder={form.state ? `Districts of ${form.state}` : "Select State First"}
                 disabled={!form.state}
@@ -407,7 +465,7 @@ export default function PredictionForm({ addToast }) {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 border-t border-gray-100 dark:border-dark-border pt-6">
               <button
                 type="submit"
-                disabled={predicting}
+                disabled={!isFormValid() || predicting}
                 className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-primary hover:bg-primary/95 text-white dark:text-dark-bg font-bold font-poppins text-sm tracking-wide shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-55 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer focus:ring-4 focus:ring-primary/25"
               >
                 {predicting ? (
@@ -426,7 +484,7 @@ export default function PredictionForm({ addToast }) {
               </button>
               
               <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 font-poppins">
-                {predicting ? 'AI models computing predictions...' : 'Strict dataset validation active.'}
+                {!isFormValid() ? 'Please select a valid district from the list.' : 'All parameters validated — ready to predict.'}
               </span>
             </div>
 

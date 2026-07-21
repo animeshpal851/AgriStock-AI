@@ -170,6 +170,28 @@ def predict():
         if area < 0 or production < 0 or crop_year < 0:
             return jsonify({"error": "Numeric values (area, production, crop_year) cannot be negative"}), 400
 
+        # Strict Backend Validation: Check State exists in dataset
+        matched_state = None
+        for s in state_district_map.keys():
+            if s.lower() == state.lower():
+                matched_state = s
+                break
+        if not matched_state:
+            return jsonify({"error": f"Invalid State '{state}'. State not found in dataset."}), 400
+
+        # Strict Backend Validation: Check District belongs to selected State
+        valid_districts = state_district_map[matched_state]
+        matched_district = None
+        for d in valid_districts:
+            if d.lower() == district.lower():
+                matched_district = d
+                break
+
+        if not matched_district:
+            return jsonify({
+                "error": f"Invalid State-District combination. District '{district}' does not belong to State '{state}'."
+            }), 400
+
         # Autofill metadata (population, growth, literacy, monthly_rainfall) from lookup table
         key = (state.lower(), district.lower())
         meta = district_metadata.get(key, {

@@ -5,6 +5,7 @@ export default function Autocomplete({
   id,
   value,
   onChange,
+  onBlur,
   suggestions = [],
   placeholder = '',
   disabled = false,
@@ -152,6 +153,9 @@ export default function Autocomplete({
           }}
           onFocus={() => {
             setOpen(true)
+          }}
+          onBlur={(e) => {
+            onBlur && onBlur(e.target.value)
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}

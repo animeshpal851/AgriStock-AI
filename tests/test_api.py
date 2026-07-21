@@ -109,5 +109,20 @@ class TestAgriStockAPI(unittest.TestCase):
         response = self.app.post("/predict", data=json.dumps(payload), content_type="application/json")
         self.assertEqual(response.status_code, 400)
 
+    def test_predict_invalid_state_district_combination(self):
+        # LUCKNOW is in Uttar Pradesh, not Andhra Pradesh
+        payload = {
+            "state": "Andhra Pradesh",
+            "district": "LUCKNOW",
+            "crop": "Arecanut",
+            "season": "Kharif",
+            "area": 2500,
+            "production": 3500
+        }
+        response = self.app.post("/predict", data=json.dumps(payload), content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+        data = json.loads(response.data)
+        self.assertIn("error", data)
+
 if __name__ == "__main__":
     unittest.main()
