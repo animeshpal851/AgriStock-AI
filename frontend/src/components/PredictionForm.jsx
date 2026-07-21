@@ -34,6 +34,9 @@ export default function PredictionForm({ addToast }) {
     rainfall: '',
   })
 
+  // Track if user manually edited population or rainfall
+  const [isCustomEdit, setIsCustomEdit] = useState(false)
+
   // Autofill note & validation errors
   const [autofillNote, setAutofillNote] = useState('')
   const [errors, setErrors] = useState({})
@@ -91,9 +94,10 @@ export default function PredictionForm({ addToast }) {
     return { isValid: true, matchedDistrict: matched }
   }, [districts])
 
-  // Handle district selection & auto-populate parameters
+  // Handle district selection & auto-populate population & rainfall parameters from dataset
   const handleDistrictChange = useCallback(async (districtName) => {
     setForm(prev => ({ ...prev, district: districtName }))
+    setIsCustomEdit(false) // reset custom edit flag on new district selection
 
     if (!districtName || !districtName.trim()) {
       setErrors(prev => ({ ...prev, district: 'This field is required' }))
@@ -118,7 +122,7 @@ export default function PredictionForm({ addToast }) {
 
     // District is valid and belongs to the state
     setErrors(prev => ({ ...prev, district: '' }))
-    setAutofillNote('Fetching district parameters...')
+    setAutofillNote('Loading dataset parameters...')
 
     try {
       const url = form.state 
@@ -127,15 +131,22 @@ export default function PredictionForm({ addToast }) {
         
       const res = await axios.get(url)
       const data = res.data
+
+      const fetchedRainfall = data.monthly_rainfall ? String(Math.round(data.monthly_rainfall * 10) / 10) : ''
+      const fetchedPopulation = data.population ? String(data.population) : ''
+      const fetchedGrowth = data.growth ? String(data.growth) : ''
+      const fetchedLiteracy = data.literacy ? String(data.literacy) : ''
+
       setForm(prev => ({
         ...prev,
         district: matchedDistrict, // normalize capitalization
-        rainfall: String(data.monthly_rainfall ? Math.round(data.monthly_rainfall * 10) / 10 : ''),
-        population: String(data.population || ''),
-        growth: String(data.growth || ''),
-        literacy: String(data.literacy || '')
+        rainfall: fetchedRainfall,
+        population: fetchedPopulation,
+        growth: fetchedGrowth,
+        literacy: fetchedLiteracy
       }))
-      setAutofillNote(`✓ ${matchedDistrict} parameters loaded from dataset`)
+
+      setAutofillNote(`✓ Auto-filled from dataset: Population (${parseInt(fetchedPopulation).toLocaleString()}) & Rainfall (${fetchedRainfall} mm)`)
     } catch (err) {
       console.error('Failed to fetch metadata for district:', err)
       setAutofillNote('')
@@ -156,17 +167,27 @@ export default function PredictionForm({ addToast }) {
   const updateField = (field, val) => {
     setForm(prev => {
       const next = { ...prev, [field]: val }
+      
+      // Dynamic Reset when State changes: Clear District, Population, and Rainfall
       if (field === 'state') {
-        next.district = '' // Reset district when state changes to prevent cross-state selection
+        next.district = ''
         next.rainfall = ''
         next.population = ''
         next.growth = ''
         next.literacy = ''
         fetchDistricts(val)
         setAutofillNote('')
+        setIsCustomEdit(false)
       }
       return next
     })
+
+    // Track manual edits to population or rainfall
+    if (field === 'population' || field === 'rainfall') {
+      setIsCustomEdit(true)
+      setAutofillNote(`✎ Custom values entered for ${field === 'population' ? 'Population' : 'Rainfall'} (will be used for prediction)`)
+    }
+
     setErrors(prev => ({ ...prev, [field]: '' }))
   }
 
@@ -185,22 +206,6 @@ export default function PredictionForm({ addToast }) {
     const districtCheck = checkDistrictValidity(form.district)
     if (!districtCheck.isValid) {
       newErrors.district = districtCheck.message
-    }
-
-    // Strict Validation: State, Crop, Season must be valid items from suggestions
-    if (form.state && states.length > 0) {
-      const isValidState = states.some(s => s.toLowerCase().trim() === form.state.toLowerCase().trim())
-      if (!isValidState) newErrors.state = 'Please select a valid state from the list.'
-    }
-
-    if (form.crop && crops.length > 0) {
-      const isValidCrop = crops.some(c => c.toLowerCase().trim() === form.crop.toLowerCase().trim())
-      if (!isValidCrop) newErrors.crop = 'Please select a valid crop from the list.'
-    }
-
-    if (form.season && seasons.length > 0) {
-      const isValidSeason = seasons.some(s => s.toLowerCase().trim() === form.season.toLowerCase().trim())
-      if (!isValidSeason) newErrors.season = 'Please select a valid season from the list.'
     }
 
     // Validate numbers are non-negative
@@ -223,17 +228,18 @@ export default function PredictionForm({ addToast }) {
     return hasValues && districtValid && noErrors
   }
 
-  // Submit Handler
+  // Submit Handler - Sends CURRENT form input values (auto-filled or user-edited) to backend ML model
   const handlePredict = async (e) => {
     e.preventDefault()
     if (!validateForm()) {
-      addToast('Please select a valid district from the list.', 'warning')
+      addToast('Please fill all required fields with valid inputs.', 'warning')
       return
     }
 
     setPredicting(true)
     setResults(null)
 
+    // Current values displayed in the input fields are sent directly
     const payload = {
       state: form.state,
       district: form.district,
@@ -242,10 +248,10 @@ export default function PredictionForm({ addToast }) {
       crop_year: 2026,
       area: parseFloat(form.area),
       production: parseFloat(form.production),
-      population: parseInt(form.population) || 1800000,
+      population: parseInt(form.population),
       growth: parseFloat(form.growth) || 15.0,
       literacy: parseFloat(form.literacy) || 70.0,
-      monthly_rainfall: parseFloat(form.rainfall) || 100.0,
+      monthly_rainfall: parseFloat(form.rainfall),
     }
 
     try {
@@ -272,7 +278,7 @@ export default function PredictionForm({ addToast }) {
     <div className="w-full flex flex-col gap-6 max-w-5xl mx-auto px-4 py-8">
       
       {/* Form Card (Glassmorphism + Dark Mode High Contrast) */}
-      <div className="glass p-6 md:p-10 rounded-[32px] border border-white/20 dark:border-dark-border shadow-2xl relative overflow-hidden transition-all duration-300">
+      <div className="p-6 md:p-10 rounded-[32px] bg-white dark:bg-[#1E2430] border border-gray-200 dark:border-[#3B4454] shadow-2xl relative overflow-hidden transition-all duration-300">
         
         {/* Subtle decorative background gradient */}
         <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-primary/10 dark:bg-primary/5 blur-[100px] pointer-events-none" />
@@ -286,7 +292,7 @@ export default function PredictionForm({ addToast }) {
             <h2 className="text-2xl font-bold font-poppins text-text-primary dark:text-white">
               Cultivation Inputs
             </h2>
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+            <p className="text-xs font-semibold text-gray-500 dark:text-[#D1D5DB]">
               Provide farming statistics to forecast agricultural demand and evaluate risk level.
             </p>
           </div>
@@ -295,7 +301,7 @@ export default function PredictionForm({ addToast }) {
         {loadingLists ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 font-poppins">Loading dataset parameters...</p>
+            <p className="text-sm font-semibold text-gray-500 dark:text-[#D1D5DB] font-poppins">Loading dataset parameters...</p>
           </div>
         ) : (
           <form onSubmit={handlePredict} className="flex flex-col gap-6">
@@ -372,7 +378,7 @@ export default function PredictionForm({ addToast }) {
               
               {/* Area */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="area" className="text-xs font-semibold text-text-primary dark:text-gray-300 font-poppins">
+                <label htmlFor="area" className="text-xs font-bold text-text-primary dark:text-white font-poppins">
                   Area (Hectares) *
                 </label>
                 <input
@@ -382,8 +388,8 @@ export default function PredictionForm({ addToast }) {
                   value={form.area}
                   onChange={(e) => updateField('area', e.target.value)}
                   placeholder="e.g. 1500"
-                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/60 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 text-text-primary dark:text-white ${
-                    errors.area ? 'border-red-500' : 'border-gray-200 dark:border-dark-border'
+                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white dark:bg-[#252C34] border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary text-text-primary dark:text-white placeholder-gray-400 dark:placeholder-[#9CA3AF] ${
+                    errors.area ? 'border-red-500' : 'border-gray-200 dark:border-[#3B4454]'
                   }`}
                 />
                 {errors.area && <span className="text-[10px] text-red-500">{errors.area}</span>}
@@ -391,7 +397,7 @@ export default function PredictionForm({ addToast }) {
 
               {/* Production */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="production" className="text-xs font-semibold text-text-primary dark:text-gray-300 font-poppins">
+                <label htmlFor="production" className="text-xs font-bold text-text-primary dark:text-white font-poppins">
                   Production (Tons) *
                 </label>
                 <input
@@ -401,35 +407,37 @@ export default function PredictionForm({ addToast }) {
                   value={form.production}
                   onChange={(e) => updateField('production', e.target.value)}
                   placeholder="e.g. 2400"
-                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/60 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 text-text-primary dark:text-white ${
-                    errors.production ? 'border-red-500' : 'border-gray-200 dark:border-dark-border'
+                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white dark:bg-[#252C34] border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary text-text-primary dark:text-white placeholder-gray-400 dark:placeholder-[#9CA3AF] ${
+                    errors.production ? 'border-red-500' : 'border-gray-200 dark:border-[#3B4454]'
                   }`}
                 />
                 {errors.production && <span className="text-[10px] text-red-500">{errors.production}</span>}
               </div>
 
-              {/* Population (Autofilled / Editable) */}
+              {/* Population (Auto-filled / Editable) */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="population" className="text-xs font-semibold text-text-primary dark:text-gray-300 font-poppins">
-                  District Population *
+                <label htmlFor="population" className="text-xs font-bold text-text-primary dark:text-white font-poppins flex items-center justify-between">
+                  <span>District Population *</span>
+                  <span className="text-[10px] font-semibold text-primary dark:text-[#D9903D] uppercase">Editable</span>
                 </label>
                 <input
                   id="population"
                   type="number"
                   value={form.population}
                   onChange={(e) => updateField('population', e.target.value)}
-                  placeholder="Autofilled"
-                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/60 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 text-text-primary dark:text-white ${
-                    errors.population ? 'border-red-500' : 'border-gray-200 dark:border-dark-border'
+                  placeholder="Auto-filled from dataset"
+                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white dark:bg-[#252C34] border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary text-text-primary dark:text-white placeholder-gray-400 dark:placeholder-[#9CA3AF] ${
+                    errors.population ? 'border-red-500' : 'border-gray-200 dark:border-[#3B4454]'
                   }`}
                 />
                 {errors.population && <span className="text-[10px] text-red-500">{errors.population}</span>}
               </div>
 
-              {/* Rainfall (Autofilled / Editable) */}
+              {/* Monthly Rainfall (Auto-filled / Editable) */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="rainfall" className="text-xs font-semibold text-text-primary dark:text-gray-300 font-poppins">
-                  Monthly Rainfall (mm) *
+                <label htmlFor="rainfall" className="text-xs font-bold text-text-primary dark:text-white font-poppins flex items-center justify-between">
+                  <span>Monthly Rainfall (mm) *</span>
+                  <span className="text-[10px] font-semibold text-primary dark:text-[#D9903D] uppercase">Editable</span>
                 </label>
                 <input
                   id="rainfall"
@@ -437,24 +445,26 @@ export default function PredictionForm({ addToast }) {
                   step="any"
                   value={form.rainfall}
                   onChange={(e) => updateField('rainfall', e.target.value)}
-                  placeholder="Autofilled"
-                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/60 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 text-text-primary dark:text-white ${
-                    errors.rainfall ? 'border-red-500' : 'border-gray-200 dark:border-dark-border'
+                  placeholder="Auto-filled from dataset"
+                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white dark:bg-[#252C34] border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary text-text-primary dark:text-white placeholder-gray-400 dark:placeholder-[#9CA3AF] ${
+                    errors.rainfall ? 'border-red-500' : 'border-gray-200 dark:border-[#3B4454]'
                   }`}
                 />
                 {errors.rainfall && <span className="text-[10px] text-red-500">{errors.rainfall}</span>}
               </div>
             </div>
 
-            {/* Autofill Notification Log */}
+            {/* Auto-fill Status Notification Log */}
             {autofillNote && (
               <motion.p 
                 initial={{ opacity: 0, y: -5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`text-xs font-semibold font-poppins ${
-                  autofillNote.startsWith('✓') 
-                    ? 'text-olive-green dark:text-green-400' 
-                    : 'text-primary animate-pulse'
+                className={`text-xs font-bold font-poppins ${
+                  isCustomEdit 
+                    ? 'text-amber-600 dark:text-[#FACC15]' 
+                    : autofillNote.startsWith('✓')
+                      ? 'text-green-600 dark:text-green-400' 
+                      : 'text-primary dark:text-[#D9903D] animate-pulse'
                 }`}
               >
                 {autofillNote}
@@ -462,15 +472,15 @@ export default function PredictionForm({ addToast }) {
             )}
 
             {/* Submit Button */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 border-t border-gray-100 dark:border-dark-border pt-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 border-t border-gray-100 dark:border-[#3B4454] pt-6">
               <button
                 type="submit"
                 disabled={!isFormValid() || predicting}
-                className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-primary hover:bg-primary/95 text-white dark:text-dark-bg font-bold font-poppins text-sm tracking-wide shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-55 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer focus:ring-4 focus:ring-primary/25"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-primary hover:bg-primary/95 text-white font-bold font-poppins text-sm tracking-wide shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-55 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer focus:ring-4 focus:ring-primary/25"
               >
                 {predicting ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white dark:border-dark-bg border-t-transparent rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Predicting...
                   </>
                 ) : (
@@ -483,8 +493,8 @@ export default function PredictionForm({ addToast }) {
                 )}
               </button>
               
-              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 font-poppins">
-                {!isFormValid() ? 'Please select a valid district from the list.' : 'All parameters validated — ready to predict.'}
+              <span className="text-xs font-semibold text-gray-500 dark:text-[#D1D5DB] font-poppins">
+                {!isFormValid() ? 'Please select a valid district from the list.' : 'Ready — ML model will evaluate exact displayed inputs.'}
               </span>
             </div>
 
