@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: agristock-backend
+    env: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && pip install flask-cors gunicorn
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
