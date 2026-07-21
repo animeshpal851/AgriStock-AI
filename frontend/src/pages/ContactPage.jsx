@@ -46,24 +46,24 @@ export default function ContactPage() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
-            className="glass p-6 md:p-10 rounded-[32px] border border-white/20 shadow-2xl flex flex-col gap-6 relative"
+            className="p-6 md:p-10 rounded-[32px] bg-white dark:bg-[#1E2430] border border-gray-200 dark:border-[#3B4454] shadow-2xl flex flex-col gap-6 relative"
           >
             <div className="flex flex-col gap-1">
-              <span className="text-primary text-xs font-bold uppercase tracking-wider font-poppins">
+              <span className="text-primary dark:text-[#D9903D] text-xs font-bold uppercase tracking-wider font-poppins">
                 GET IN TOUCH
               </span>
-              <h1 className="text-2xl sm:text-3xl font-extrabold font-poppins text-text-primary dark:text-white">
+              <h1 className="text-2xl sm:text-3xl font-black font-poppins text-text-primary dark:text-white">
                 Contact AgriStock AI
               </h1>
-              <p className="text-xs font-semibold text-gray-400 dark:text-gray-500">
-                Have questions about our predictive algorithms or custom data licensing?
+              <p className="text-xs font-semibold text-gray-500 dark:text-[#D1D5DB]">
+                Have questions about our predictive algorithms or custom dataset integrations?
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-5 mt-2">
               {/* Name */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="name" className="text-xs font-semibold text-text-primary dark:text-gray-300 font-poppins">
+                <label htmlFor="name" className="text-xs font-bold text-text-primary dark:text-white font-poppins">
                   Full Name *
                 </label>
                 <input
@@ -72,8 +72,8 @@ export default function ContactPage() {
                   value={form.name}
                   onChange={(e) => updateField('name', e.target.value)}
                   placeholder="e.g. Amit Sharma"
-                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/50 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 focus:border-primary/80 text-text-primary dark:text-white ${
-                    errors.name ? 'border-red-500' : 'border-gray-200 dark:border-dark-border'
+                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white dark:bg-[#252C34] border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary dark:text-white placeholder-gray-400 dark:placeholder-[#9CA3AF] ${
+                    errors.name ? 'border-red-500' : 'border-gray-200 dark:border-[#3B4454]'
                   }`}
                 />
                 {errors.name && <span className="text-[10px] text-red-500">{errors.name}</span>}
@@ -81,7 +81,7 @@ export default function ContactPage() {
 
               {/* Email */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="email" className="text-xs font-semibold text-text-primary dark:text-gray-300 font-poppins">
+                <label htmlFor="email" className="text-xs font-bold text-text-primary dark:text-white font-poppins">
                   Email Address *
                 </label>
                 <input
@@ -90,8 +90,8 @@ export default function ContactPage() {
                   value={form.email}
                   onChange={(e) => updateField('email', e.target.value)}
                   placeholder="e.g. amit@farmautomation.com"
-                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/50 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 focus:border-primary/80 text-text-primary dark:text-white ${
-                    errors.email ? 'border-red-500' : 'border-gray-200 dark:border-dark-border'
+                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white dark:bg-[#252C34] border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary dark:text-white placeholder-gray-400 dark:placeholder-[#9CA3AF] ${
+                    errors.email ? 'border-red-500' : 'border-gray-200 dark:border-[#3B4454]'
                   }`}
                 />
                 {errors.email && <span className="text-[10px] text-red-500">{errors.email}</span>}
@@ -99,7 +99,7 @@ export default function ContactPage() {
 
               {/* Organization */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="org" className="text-xs font-semibold text-text-primary dark:text-gray-300 font-poppins">
+                <label htmlFor="org" className="text-xs font-bold text-text-primary dark:text-white font-poppins">
                   Organization / Farm Name
                 </label>
                 <input
@@ -108,13 +108,13 @@ export default function ContactPage() {
                   value={form.org}
                   onChange={(e) => updateField('org', e.target.value)}
                   placeholder="e.g. Green Valley Farm Cooperative"
-                  className="w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/50 border border-gray-200 dark:border-dark-border hover:border-primary/45 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 focus:border-primary/80 text-text-primary dark:text-white"
+                  className="w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white dark:bg-[#252C34] border border-gray-200 dark:border-[#3B4454] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary dark:text-white placeholder-gray-400 dark:placeholder-[#9CA3AF]"
                 />
               </div>
 
               {/* Message */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="message" className="text-xs font-semibold text-text-primary dark:text-gray-300 font-poppins">
+                <label htmlFor="message" className="text-xs font-bold text-text-primary dark:text-white font-poppins">
                   Message *
                 </label>
                 <textarea
@@ -123,8 +123,8 @@ export default function ContactPage() {
                   value={form.message}
                   onChange={(e) => updateField('message', e.target.value)}
                   placeholder="Enter your message details..."
-                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/50 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 focus:border-primary/80 text-text-primary dark:text-white resize-none ${
-                    errors.message ? 'border-red-500' : 'border-gray-200 dark:border-dark-border'
+                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white dark:bg-[#252C34] border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary dark:text-white placeholder-gray-400 dark:placeholder-[#9CA3AF] resize-none ${
+                    errors.message ? 'border-red-500' : 'border-gray-200 dark:border-[#3B4454]'
                   }`}
                 />
                 {errors.message && <span className="text-[10px] text-red-500">{errors.message}</span>}
@@ -132,7 +132,7 @@ export default function ContactPage() {
 
               <button
                 type="submit"
-                className="w-full py-3.5 mt-2 rounded-2xl bg-primary hover:bg-primary/95 text-white dark:text-dark-bg font-bold font-poppins text-sm tracking-wide shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 mt-2 rounded-2xl bg-primary hover:bg-primary/95 text-white font-bold font-poppins text-sm tracking-wide shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
               >
                 Send Message
               </button>
@@ -143,23 +143,23 @@ export default function ContactPage() {
             key="success-screen"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="glass p-10 rounded-[32px] border border-white/20 shadow-2xl text-center flex flex-col items-center gap-5"
+            className="p-10 rounded-[32px] bg-white dark:bg-[#1E2430] border border-gray-200 dark:border-[#3B4454] shadow-2xl text-center flex flex-col items-center gap-5"
           >
-            <div className="w-14 h-14 rounded-full bg-olive-green/10 dark:bg-green-950/20 text-olive-green dark:text-green-400 flex items-center justify-center text-2xl font-bold">
+            <div className="w-14 h-14 rounded-full bg-green-500/10 text-green-500 flex items-center justify-center text-2xl font-bold">
               ✓
             </div>
             <h2 className="text-2xl font-bold font-poppins text-text-primary dark:text-white">
               Message Sent!
             </h2>
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 max-w-sm leading-relaxed">
-              Thank you, {form.name}. We have received your inquiry and our agricultural analyst team will get back to you within 24 hours at <b>{form.email}</b>.
+            <p className="text-xs font-semibold text-gray-500 dark:text-[#D1D5DB] max-w-sm leading-relaxed">
+              Thank you, {form.name}. We have received your inquiry and our team will get back to you within 24 hours at <b>{form.email}</b>.
             </p>
             <button
               onClick={() => {
                 setForm({ name: '', email: '', org: '', message: '' })
                 setSubmitted(false)
               }}
-              className="px-6 py-2.5 mt-4 rounded-xl border border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-bg/60 text-xs font-bold font-poppins text-text-primary dark:text-white transition-all cursor-pointer"
+              className="px-6 py-2.5 mt-4 rounded-xl border border-gray-200 dark:border-[#3B4454] hover:bg-gray-100 dark:hover:bg-[#252C3A] text-xs font-bold font-poppins text-text-primary dark:text-white transition-all cursor-pointer"
             >
               Send Another Message
             </button>

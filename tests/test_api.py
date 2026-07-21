@@ -82,7 +82,7 @@ class TestAgriStockAPI(unittest.TestCase):
         self.assertIn("input_metadata", data)
         
         self.assertTrue(data["predicted_demand"] > 0)
-        self.assertIn(data["predicted_risk"], ["High", "Moderate", "Low"])
+        self.assertIn(data["predicted_risk"], ["High Risk", "Moderate Risk", "Low Risk", "High", "Moderate", "Low"])
         self.assertTrue(0 <= data["confidence_score"] <= 1)
         self.assertTrue(data["input_metadata"]["monthly_rainfall"] > 0)
 

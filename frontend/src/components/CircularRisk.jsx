@@ -8,25 +8,25 @@ export default function CircularRisk({ risk = 'Low', confidence = 0.85 }) {
     const rl = String(riskLevel).toLowerCase()
     if (rl.includes('low')) {
       return {
-        label: 'Low Risk',
+        label: '🟢 Low Risk',
         color: '#22C55E', // Green
-        bgLight: 'rgba(34, 197, 94, 0.1)',
-        desc: 'Favorable conditions. High probability of healthy yield.'
+        bgLight: 'rgba(34, 197, 94, 0.15)',
+        desc: 'Favorable condition index. High probability of optimal crop yield.'
       }
     }
     if (rl.includes('mod') || rl.includes('med')) {
       return {
-        label: 'Moderate Risk',
-        color: '#F59E0B', // Amber/Yellow
-        bgLight: 'rgba(245, 158, 11, 0.1)',
-        desc: 'Minor weather anomalies or market volatility possible. Monitor crops.'
+        label: '🟡 Moderate Risk',
+        color: '#FACC15', // Yellow
+        bgLight: 'rgba(250, 204, 21, 0.15)',
+        desc: 'Moderate yield variation predicted. Standard monitoring advised.'
       }
     }
     return {
-      label: 'High Risk',
+      label: '🔴 High Risk',
       color: '#EF4444', // Red
-      bgLight: 'rgba(239, 68, 68, 0.1)',
-      desc: 'Significant agricultural or market risk. Insurance & contingencies advised.'
+      bgLight: 'rgba(239, 68, 68, 0.15)',
+      desc: 'Sub-optimal yield metrics predicted. Risk mitigation advised.'
     }
   }
 
@@ -43,8 +43,8 @@ export default function CircularRisk({ risk = 'Low', confidence = 0.85 }) {
   }, [confidencePercent])
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 rounded-3xl bg-white/40 dark:bg-dark-card/40 border border-white/20 dark:border-dark-border backdrop-blur-xl shadow-lg w-full max-w-[280px]">
-      <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 font-poppins uppercase tracking-wider mb-4">
+    <div className="flex flex-col items-center justify-center p-6 rounded-3xl bg-white dark:bg-[#1E2430] border border-gray-200 dark:border-[#3B4454] shadow-xl w-full max-w-[280px]">
+      <h4 className="text-xs font-bold text-gray-500 dark:text-[#E5E7EB] font-poppins uppercase tracking-wider mb-4">
         Risk Assessment
       </h4>
       
@@ -56,7 +56,7 @@ export default function CircularRisk({ risk = 'Low', confidence = 0.85 }) {
             cx="50"
             cy="50"
             r="40"
-            className="stroke-gray-100 dark:stroke-gray-800"
+            className="stroke-gray-100 dark:stroke-[#252C34]"
             strokeWidth="8"
             fill="transparent"
           />
@@ -79,10 +79,10 @@ export default function CircularRisk({ risk = 'Low', confidence = 0.85 }) {
         
         {/* Core content in center */}
         <div className="absolute flex flex-col items-center justify-center text-center">
-          <span className="text-2xl font-bold text-text-primary dark:text-white font-poppins">
+          <span className="text-2xl font-black text-text-primary dark:text-white font-poppins">
             {confidencePercent}%
           </span>
-          <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-0.5">
+          <span className="text-[10px] font-bold text-gray-400 dark:text-[#B0B7C3] uppercase tracking-wider mt-0.5">
             Confidence
           </span>
         </div>
@@ -91,16 +91,15 @@ export default function CircularRisk({ risk = 'Low', confidence = 0.85 }) {
       {/* Risk Badge & Description */}
       <div className="text-center mt-5">
         <div 
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold font-poppins"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold font-poppins shadow-sm"
           style={{ 
             color: details.color, 
             backgroundColor: details.bgLight 
           }}
         >
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: details.color }} />
           {details.label}
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 font-medium leading-relaxed px-1">
+        <p className="text-xs text-gray-600 dark:text-[#D1D5DB] mt-3 font-medium leading-relaxed px-1">
           {details.desc}
         </p>
       </div>

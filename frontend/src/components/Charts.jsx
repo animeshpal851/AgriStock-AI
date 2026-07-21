@@ -6,16 +6,14 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  AreaChart,
-  Area,
   CartesianGrid
 } from 'recharts'
 
 export default function Charts({ results }) {
-  const { demand, payload, input_metadata } = results
+  const { predicted_demand, payload, input_metadata } = results
   const crop = payload?.crop || 'Crop'
   const production = payload?.production || 0
-  const demandNum = typeof demand === 'number' ? demand : parseFloat(demand) || 0
+  const demandNum = typeof predicted_demand === 'number' ? predicted_demand : parseFloat(predicted_demand) || 0
 
   // 1. Data for Supply vs Demand Chart
   const supplyDemandData = [
@@ -32,19 +30,19 @@ export default function Charts({ results }) {
   const growth = input_metadata?.growth || 0
 
   const metricsData = [
-    { name: 'Historical Rain (mm)', value: Math.round(rain), color: '#3B82F6' },
-    { name: 'Literacy Rate (%)', value: Math.round(literacy), color: '#10B981' },
-    { name: 'Population Growth (%)', value: Math.round(growth), color: '#F59E0B' }
+    { name: 'Rainfall (mm)', value: Math.round(rain), color: '#3B82F6' },
+    { name: 'Literacy (%)', value: Math.round(literacy), color: '#22C55E' },
+    { name: 'Growth (%)', value: Math.round(growth), color: '#FACC15' }
   ]
 
-  // Custom tooltips for premium aesthetic
+  // Custom tooltips for high-contrast dark theme
   const CustomTooltip = ({ active, payload: tooltipPayload, label }) => {
     if (active && tooltipPayload && tooltipPayload.length) {
       return (
-        <div className="p-3 bg-white/95 dark:bg-dark-card/95 border border-gray-150 dark:border-dark-border rounded-xl shadow-lg backdrop-blur-md animate-fade-in text-xs font-semibold">
-          <p className="text-gray-400 mb-1">{label}</p>
+        <div className="p-3.5 bg-white dark:bg-[#1E2430] border border-gray-200 dark:border-[#3B4454] rounded-xl shadow-xl animate-fade-in text-xs font-semibold">
+          <p className="text-gray-500 dark:text-[#E5E7EB] mb-1.5 font-poppins">{label}</p>
           {tooltipPayload.map((entry, idx) => (
-            <p key={idx} style={{ color: entry.color }} className="font-poppins py-0.5">
+            <p key={idx} style={{ color: entry.color }} className="font-poppins py-0.5 font-bold">
               {entry.name}: {entry.value.toLocaleString()}
             </p>
           ))}
@@ -57,8 +55,8 @@ export default function Charts({ results }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full mt-6">
       {/* Chart 1: Supply vs Demand */}
-      <div className="p-6 rounded-3xl bg-white/40 dark:bg-dark-card/40 border border-white/20 dark:border-dark-border backdrop-blur-xl shadow-lg">
-        <h4 className="text-sm font-bold text-text-primary dark:text-white font-poppins mb-4 tracking-wide">
+      <div className="p-6 rounded-3xl bg-white dark:bg-[#1E2430] border border-gray-200 dark:border-[#3B4454] shadow-xl">
+        <h4 className="text-sm font-black text-text-primary dark:text-white font-poppins mb-4 tracking-wide">
           Supply &amp; Demand Balance
         </h4>
         <div className="h-64 w-full">
@@ -69,36 +67,36 @@ export default function Charts({ results }) {
             >
               <XAxis 
                 dataKey="name" 
-                stroke="#9CA3AF" 
+                stroke="#B0B7C3" 
                 fontSize={12} 
                 tickLine={false} 
               />
               <YAxis 
-                stroke="#9CA3AF" 
+                stroke="#B0B7C3" 
                 fontSize={12} 
                 tickLine={false} 
                 axisLine={false} 
               />
               <Tooltip content={<CustomTooltip />} />
-              <Legend verticalAlign="top" height={36} />
+              <Legend verticalAlign="top" height={36} wrapperStyle={{ color: '#E5E7EB' }} />
               <Bar 
                 dataKey="Predicted Demand (Tons)" 
                 fill="#D9903D" 
                 radius={[10, 10, 0, 0]} 
                 maxBarSize={60} 
-                animationDuration={1500}
+                animationDuration={1200}
               />
               <Bar 
                 dataKey="Planned Production (Tons)" 
-                fill="#526E40" 
+                fill="#22C55E" 
                 radius={[10, 10, 0, 0]} 
                 maxBarSize={60} 
-                animationDuration={1500}
+                animationDuration={1200}
               />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <p className="text-[11px] text-gray-500 dark:text-gray-400 text-center mt-3 font-medium">
+        <p className="text-[11px] text-gray-600 dark:text-[#D1D5DB] text-center mt-3 font-semibold">
           {demandNum > production 
             ? `⚠️ Potential crop deficit of ${(demandNum - production).toLocaleString(undefined, {maximumFractionDigits: 0})} Tons predicted in this district.`
             : `✓ Potential crop surplus of ${(production - demandNum).toLocaleString(undefined, {maximumFractionDigits: 0})} Tons expected.`
@@ -107,8 +105,8 @@ export default function Charts({ results }) {
       </div>
 
       {/* Chart 2: Climate & Metrics */}
-      <div className="p-6 rounded-3xl bg-white/40 dark:bg-dark-card/40 border border-white/20 dark:border-dark-border backdrop-blur-xl shadow-lg">
-        <h4 className="text-sm font-bold text-text-primary dark:text-white font-poppins mb-4 tracking-wide">
+      <div className="p-6 rounded-3xl bg-white dark:bg-[#1E2430] border border-gray-200 dark:border-[#3B4454] shadow-xl">
+        <h4 className="text-sm font-black text-text-primary dark:text-white font-poppins mb-4 tracking-wide">
           Climate &amp; Regional Metrics
         </h4>
         <div className="h-64 w-full">
@@ -121,7 +119,7 @@ export default function Charts({ results }) {
               <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.15} />
               <XAxis 
                 type="number" 
-                stroke="#9CA3AF" 
+                stroke="#B0B7C3" 
                 fontSize={11} 
                 tickLine={false} 
                 axisLine={false} 
@@ -129,7 +127,7 @@ export default function Charts({ results }) {
               <YAxis 
                 type="category" 
                 dataKey="name" 
-                stroke="#9CA3AF" 
+                stroke="#B0B7C3" 
                 fontSize={11} 
                 tickLine={false} 
                 axisLine={false}
@@ -138,10 +136,9 @@ export default function Charts({ results }) {
               <Bar 
                 dataKey="value" 
                 radius={[0, 8, 8, 0]} 
-                animationDuration={1500}
+                animationDuration={1200}
                 fill="#3B82F6"
               >
-                {/* Dynamically color bars based on item */}
                 {metricsData.map((entry, index) => (
                   <Bar key={`cell-${index}`} fill={entry.color} />
                 ))}
@@ -149,8 +146,8 @@ export default function Charts({ results }) {
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <p className="text-[11px] text-gray-500 dark:text-gray-400 text-center mt-3 font-medium">
-          Historic climate averages synced from population and census data.
+        <p className="text-[11px] text-gray-600 dark:text-[#D1D5DB] text-center mt-3 font-semibold">
+          Historic climate and census metrics loaded from dataset.
         </p>
       </div>
     </div>

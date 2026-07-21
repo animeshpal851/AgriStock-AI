@@ -49,7 +49,7 @@ export default function Navbar() {
     <nav 
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
         scrolled 
-          ? 'py-3.5 bg-white/75 dark:bg-dark-bg/75 backdrop-blur-xl border-b border-gray-100 dark:border-dark-border shadow-sm' 
+          ? 'py-3.5 bg-white/85 dark:bg-[#0F1117]/90 backdrop-blur-xl border-b border-gray-200 dark:border-[#3B4454] shadow-md' 
           : 'py-5 bg-transparent'
       }`}
     >
@@ -60,7 +60,7 @@ export default function Navbar() {
           <span className="w-9 h-9 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-lg shadow-sm group-hover:scale-105 transition-transform duration-300">
             🌾
           </span>
-          <span className="text-lg font-extrabold font-poppins text-text-primary dark:text-white tracking-tight flex items-center gap-1">
+          <span className="text-lg font-black font-poppins text-text-primary dark:text-white tracking-tight flex items-center gap-1">
             AgriStock <span className="text-primary font-black uppercase text-xs px-1.5 py-0.5 rounded-md bg-primary/10 dark:bg-primary/20">AI</span>
           </span>
         </Link>
@@ -72,31 +72,31 @@ export default function Navbar() {
               <Link
                 key={link.to}
                 to={link.to}
-                className={`text-sm font-semibold font-poppins tracking-wide transition-colors duration-250 ${
+                className={`text-sm font-bold font-poppins tracking-wide transition-colors duration-200 ${
                   isActive(link.to) 
-                    ? 'text-primary' 
-                    : 'text-text-primary/70 dark:text-gray-300/80 hover:text-primary dark:hover:text-primary'
+                    ? 'text-primary dark:text-[#D9903D]' 
+                    : 'text-text-primary/80 dark:text-[#E5E7EB] hover:text-primary dark:hover:text-[#D9903D]'
                 }`}
               >
                 {link.label}
               </Link>
             ))}
             <a 
-              href="https://github.com" 
+              href="https://github.com/animeshpal851/AgriStock-AI" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-sm font-semibold font-poppins tracking-wide text-text-primary/70 dark:text-gray-300/80 hover:text-primary dark:hover:text-primary transition-colors"
+              className="text-sm font-bold font-poppins tracking-wide text-text-primary/80 dark:text-[#E5E7EB] hover:text-primary dark:hover:text-[#D9903D] transition-colors"
             >
               GitHub
             </a>
           </div>
 
-          <div className="flex items-center gap-4 pl-4 border-l border-gray-200 dark:border-dark-border">
+          <div className="flex items-center gap-4 pl-4 border-l border-gray-200 dark:border-[#3B4454]">
             {/* Dark Mode Switch Button */}
             <button
               onClick={toggleTheme}
               aria-label="Toggle visual theme"
-              className="p-2 rounded-xl bg-gray-50 dark:bg-dark-card border border-gray-150 dark:border-dark-border text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary hover:border-primary/30 dark:hover:border-primary/30 transition-all duration-300 cursor-pointer"
+              className="p-2.5 rounded-xl bg-gray-100 dark:bg-[#1E2430] border border-gray-200 dark:border-[#3B4454] text-gray-700 dark:text-[#FFFFFF] hover:text-primary dark:hover:text-[#D9903D] transition-all duration-300 cursor-pointer shadow-sm"
             >
               {theme === 'light' ? (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,7 +111,7 @@ export default function Navbar() {
 
             <Link 
               to="/prediction" 
-              className="px-5 py-2 rounded-xl bg-primary hover:bg-primary/95 text-white dark:text-dark-bg font-bold font-poppins text-xs tracking-wide transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/95 text-white font-bold font-poppins text-xs tracking-wide transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer"
             >
               Get Prediction
             </Link>
@@ -123,7 +123,7 @@ export default function Navbar() {
           <button
             onClick={toggleTheme}
             aria-label="Toggle visual theme"
-            className="p-2 rounded-lg bg-gray-50 dark:bg-dark-card border border-gray-150 dark:border-dark-border text-gray-500 dark:text-gray-400 cursor-pointer"
+            className="p-2 rounded-lg bg-gray-100 dark:bg-[#1E2430] border border-gray-200 dark:border-[#3B4454] text-gray-700 dark:text-white cursor-pointer"
           >
             {theme === 'light' ? (
               <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,31 +156,31 @@ export default function Navbar() {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden w-full bg-white dark:bg-dark-card border-b border-gray-100 dark:border-dark-border px-6 py-4 flex flex-col gap-4 animate-fade-in shadow-lg">
+        <div className="md:hidden w-full bg-white dark:bg-[#1E2430] border-b border-gray-200 dark:border-[#3B4454] px-6 py-4 flex flex-col gap-4 animate-fade-in shadow-xl">
           {navLinks.map(link => (
             <Link
               key={link.to}
               to={link.to}
               className={`text-sm font-bold font-poppins py-1 transition-colors ${
                 isActive(link.to) 
-                  ? 'text-primary' 
-                  : 'text-text-primary/70 dark:text-gray-300/80'
+                  ? 'text-primary dark:text-[#D9903D]' 
+                  : 'text-text-primary/80 dark:text-[#E5E7EB]'
               }`}
             >
               {link.label}
             </Link>
           ))}
           <a 
-            href="https://github.com" 
+            href="https://github.com/animeshpal851/AgriStock-AI" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="text-sm font-bold font-poppins py-1 text-text-primary/70 dark:text-gray-300/80"
+            className="text-sm font-bold font-poppins py-1 text-text-primary/80 dark:text-[#E5E7EB]"
           >
             GitHub
           </a>
           <Link 
             to="/prediction" 
-            className="w-full text-center py-2.5 rounded-xl bg-primary text-white dark:text-dark-bg font-bold font-poppins text-xs tracking-wider"
+            className="w-full text-center py-2.5 rounded-xl bg-primary text-white font-bold font-poppins text-xs tracking-wider"
           >
             Get Prediction
           </Link>

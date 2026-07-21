@@ -248,30 +248,39 @@ def predict():
             cls_features = cls_features.reindex(columns=classifier.feature_names_in_).fillna(0)
 
         # Predictions
-        pred_demand = float(regressor.predict(reg_features)[0])
+        predicted_demand = float(regressor.predict(reg_features)[0])
         
-        cls_probs = classifier.predict_proba(cls_features)[0]
-        pred_cls_idx = classifier.predict(cls_features)[0]
-        confidence_score = float(cls_probs[pred_cls_idx])
+        # Classification Prediction (Crop Risk Level)
+        pred_risk_idx = classifier.predict(cls_features)[0]
+        risk_label = label_encoders['risk_level'].inverse_transform([pred_risk_idx])[0]
         
-        # Decode risk class string
-        risk_classes = label_encoders["risk_level"].classes_
-        predicted_risk = str(risk_classes[pred_cls_idx])
-        
-        # Calculate prediction time in ms
-        prediction_time_ms = round((time.time() - start_time) * 1000, 2)
+        # Calculate class probabilities
+        probas = classifier.predict_proba(cls_features)[0]
+        risk_classes = label_encoders['risk_level'].classes_
+        class_probs = {cls_name: round(float(prob), 4) for cls_name, prob in zip(risk_classes, probas)}
+        confidence_score = round(float(np.max(probas)), 4)
+
+        execution_time_ms = round((time.time() - start_time) * 1000, 2)
 
         return jsonify({
-            "predicted_demand": pred_demand,
-            "predicted_risk": predicted_risk,
+            "status": "success",
+            "predicted_demand": round(float(predicted_demand), 2),
+            "predicted_risk": risk_label,
             "confidence_score": confidence_score,
-            "prediction_time_ms": prediction_time_ms,
+            "class_probabilities": class_probs,
+            "prediction_time_ms": execution_time_ms,
             "input_metadata": {
+                "state": state,
+                "district": district,
+                "crop": crop,
+                "season": season,
+                "area": area,
+                "production": production,
+                "yield": round(yield_val, 2),
+                "monthly_rainfall": monthly_rainfall,
                 "population": population,
                 "growth": growth,
-                "literacy": literacy,
-                "monthly_rainfall": monthly_rainfall,
-                "yield": yield_val
+                "literacy": literacy
             }
         })
 
