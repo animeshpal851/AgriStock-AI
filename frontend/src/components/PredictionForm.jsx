@@ -34,7 +34,7 @@ export default function PredictionForm({ addToast }) {
     rainfall: '',
   })
 
-  // Autofill note
+  // Autofill note & validation errors
   const [autofillNote, setAutofillNote] = useState('')
   const [errors, setErrors] = useState({})
 
@@ -61,7 +61,7 @@ export default function PredictionForm({ addToast }) {
     fetchInitialData()
   }, [addToast])
 
-  // Fetch districts list when State changes
+  // Fetch districts list strictly for selected State
   const fetchDistricts = useCallback(async (stateName) => {
     if (!stateName) {
       setDistricts([])
@@ -76,7 +76,7 @@ export default function PredictionForm({ addToast }) {
     }
   }, [])
 
-  // Handle district select and auto-populate rainfall & demographics metadata
+  // Handle district selection & auto-populate parameters for exact (state, district)
   const handleDistrictChange = useCallback(async (districtName) => {
     if (!districtName) {
       setForm(prev => ({ 
@@ -92,10 +92,16 @@ export default function PredictionForm({ addToast }) {
     }
 
     setForm(prev => ({ ...prev, district: districtName }))
-    setAutofillNote('Fetching district parameters...')
+    setErrors(prev => ({ ...prev, district: '' }))
+    setAutofillNote('Fetching parameters for district...')
 
     try {
-      const res = await axios.get(`${API_BASE}/rainfall/${encodeURIComponent(districtName)}`)
+      // Pass both state and district for exact dataset lookup
+      const url = form.state 
+        ? `${API_BASE}/rainfall/${encodeURIComponent(form.state)}/${encodeURIComponent(districtName)}`
+        : `${API_BASE}/rainfall/${encodeURIComponent(districtName)}`
+        
+      const res = await axios.get(url)
       const data = res.data
       setForm(prev => ({
         ...prev,
@@ -104,20 +110,19 @@ export default function PredictionForm({ addToast }) {
         growth: String(data.growth || ''),
         literacy: String(data.literacy || '')
       }))
-      setAutofillNote('✓ Parameters auto-filled from census dataset')
-      addToast(`Autofilled rainfall & demographics for ${districtName}`, 'success')
+      setAutofillNote(`✓ ${districtName} parameters loaded from dataset`)
     } catch (err) {
       console.error('Failed to fetch rainfall/metadata for district:', err)
       setAutofillNote('')
     }
-  }, [addToast])
+  }, [form.state])
 
-  // Set individual field value and reset errors
+  // Set field value with strict cascading resets
   const updateField = (field, val) => {
     setForm(prev => {
       const next = { ...prev, [field]: val }
       if (field === 'state') {
-        next.district = ''
+        next.district = '' // Reset district when state changes to prevent cross-state selection
         next.rainfall = ''
         next.population = ''
         next.growth = ''
@@ -130,7 +135,7 @@ export default function PredictionForm({ addToast }) {
     setErrors(prev => ({ ...prev, [field]: '' }))
   }
 
-  // Inputs Validation
+  // Strict Form Validation
   const validateForm = () => {
     const requiredFields = ['state', 'district', 'crop', 'season', 'area', 'production', 'population', 'rainfall']
     const newErrors = {}
@@ -140,6 +145,14 @@ export default function PredictionForm({ addToast }) {
         newErrors[field] = 'This field is required'
       }
     })
+
+    // Strict Validation: District MUST belong to the selected State
+    if (form.state && form.district && districts.length > 0) {
+      const isValidDistrict = districts.some(d => d.toLowerCase().trim() === form.district.toLowerCase().trim())
+      if (!isValidDistrict) {
+        newErrors.district = `'${form.district}' is not a valid district in ${form.state}`
+      }
+    }
 
     // Validate numbers are non-negative
     const checkNegative = ['area', 'production', 'population', 'rainfall', 'growth', 'literacy']
@@ -157,7 +170,7 @@ export default function PredictionForm({ addToast }) {
   const handlePredict = async (e) => {
     e.preventDefault()
     if (!validateForm()) {
-      addToast('Please correct validation errors', 'warning')
+      addToast('Please fix validation errors before submitting', 'warning')
       return
     }
 
@@ -180,14 +193,12 @@ export default function PredictionForm({ addToast }) {
 
     try {
       const res = await axios.post(`${API_BASE}/predict`, payload)
-      // Save results
       setResults({
         ...res.data,
         payload
       })
       addToast('AI Prediction generated successfully!', 'success')
       
-      // Smooth scroll to results
       setTimeout(() => {
         document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }, 300)
@@ -203,12 +214,12 @@ export default function PredictionForm({ addToast }) {
   return (
     <div className="w-full flex flex-col gap-6 max-w-5xl mx-auto px-4 py-8">
       
-      {/* Form Card (Glassmorphism) */}
-      <div className="glass p-6 md:p-10 rounded-[32px] border border-white/20 shadow-2xl relative overflow-hidden transition-all duration-300">
+      {/* Form Card (Glassmorphism + Dark Mode High Contrast) */}
+      <div className="glass p-6 md:p-10 rounded-[32px] border border-white/20 dark:border-dark-border shadow-2xl relative overflow-hidden transition-all duration-300">
         
         {/* Subtle decorative background gradient */}
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-primary/10 blur-[100px] pointer-events-none" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-olive-green/10 blur-[100px] pointer-events-none" />
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-primary/10 dark:bg-primary/5 blur-[100px] pointer-events-none" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-olive-green/10 dark:bg-olive-green/5 blur-[100px] pointer-events-none" />
 
         <div className="flex items-center gap-4 mb-8">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary text-xl">
@@ -218,7 +229,7 @@ export default function PredictionForm({ addToast }) {
             <h2 className="text-2xl font-bold font-poppins text-text-primary dark:text-white">
               Cultivation Inputs
             </h2>
-            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
               Provide farming statistics to forecast agricultural demand and evaluate risk level.
             </p>
           </div>
@@ -227,7 +238,7 @@ export default function PredictionForm({ addToast }) {
         {loadingLists ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm font-semibold text-gray-500 font-poppins">Connecting to AgriStock backend database...</p>
+            <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 font-poppins">Loading dataset parameters...</p>
           </div>
         ) : (
           <form onSubmit={handlePredict} className="flex flex-col gap-6">
@@ -257,7 +268,7 @@ export default function PredictionForm({ addToast }) {
                 value={form.district}
                 onChange={handleDistrictChange}
                 suggestions={districts}
-                placeholder={form.state ? "Select District" : "Select State First"}
+                placeholder={form.state ? `Districts of ${form.state}` : "Select State First"}
                 disabled={!form.state}
                 error={errors.district}
                 icon={
@@ -313,7 +324,7 @@ export default function PredictionForm({ addToast }) {
                   value={form.area}
                   onChange={(e) => updateField('area', e.target.value)}
                   placeholder="e.g. 1500"
-                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/50 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 focus:border-primary/80 text-text-primary dark:text-white ${
+                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/60 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 text-text-primary dark:text-white ${
                     errors.area ? 'border-red-500' : 'border-gray-200 dark:border-dark-border'
                   }`}
                 />
@@ -332,7 +343,7 @@ export default function PredictionForm({ addToast }) {
                   value={form.production}
                   onChange={(e) => updateField('production', e.target.value)}
                   placeholder="e.g. 2400"
-                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/50 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 focus:border-primary/80 text-text-primary dark:text-white ${
+                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/60 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 text-text-primary dark:text-white ${
                     errors.production ? 'border-red-500' : 'border-gray-200 dark:border-dark-border'
                   }`}
                 />
@@ -350,7 +361,7 @@ export default function PredictionForm({ addToast }) {
                   value={form.population}
                   onChange={(e) => updateField('population', e.target.value)}
                   placeholder="Autofilled"
-                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/50 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 focus:border-primary/80 text-text-primary dark:text-white ${
+                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/60 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 text-text-primary dark:text-white ${
                     errors.population ? 'border-red-500' : 'border-gray-200 dark:border-dark-border'
                   }`}
                 />
@@ -369,41 +380,11 @@ export default function PredictionForm({ addToast }) {
                   value={form.rainfall}
                   onChange={(e) => updateField('rainfall', e.target.value)}
                   placeholder="Autofilled"
-                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/50 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 focus:border-primary/80 text-text-primary dark:text-white ${
+                  className={`w-full py-3 px-4 text-sm font-medium rounded-2xl bg-white/70 dark:bg-dark-card/60 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/80 text-text-primary dark:text-white ${
                     errors.rainfall ? 'border-red-500' : 'border-gray-200 dark:border-dark-border'
                   }`}
                 />
                 {errors.rainfall && <span className="text-[10px] text-red-500">{errors.rainfall}</span>}
-              </div>
-            </div>
-
-            {/* Optional Autofill Parameters (Hidden but custom-controlled or pre-calculated) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 opacity-80 mt-1">
-              <div className="flex flex-col gap-1">
-                <label htmlFor="growth" className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide">
-                  Growth Rate (%)
-                </label>
-                <input 
-                  id="growth"
-                  type="number" 
-                  step="any"
-                  value={form.growth} 
-                  onChange={(e) => updateField('growth', e.target.value)}
-                  className="bg-transparent border-b border-gray-200 dark:border-dark-border pb-1 text-xs font-bold text-text-primary dark:text-gray-200 focus:outline-none focus:border-primary"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label htmlFor="literacy" className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide">
-                  Literacy Rate (%)
-                </label>
-                <input 
-                  id="literacy"
-                  type="number" 
-                  step="any"
-                  value={form.literacy} 
-                  onChange={(e) => updateField('literacy', e.target.value)}
-                  className="bg-transparent border-b border-gray-200 dark:border-dark-border pb-1 text-xs font-bold text-text-primary dark:text-gray-200 focus:outline-none focus:border-primary"
-                />
               </div>
             </div>
 
@@ -412,7 +393,7 @@ export default function PredictionForm({ addToast }) {
               <motion.p 
                 initial={{ opacity: 0, y: -5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`text-xs font-medium font-poppins ${
+                className={`text-xs font-semibold font-poppins ${
                   autofillNote.startsWith('✓') 
                     ? 'text-olive-green dark:text-green-400' 
                     : 'text-primary animate-pulse'
@@ -427,7 +408,7 @@ export default function PredictionForm({ addToast }) {
               <button
                 type="submit"
                 disabled={predicting}
-                className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-primary hover:bg-primary/95 text-white dark:text-dark-bg font-bold font-poppins text-sm tracking-wide transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-55 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer focus:ring-4 focus:ring-primary/20"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-primary hover:bg-primary/95 text-white dark:text-dark-bg font-bold font-poppins text-sm tracking-wide shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-55 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer focus:ring-4 focus:ring-primary/25"
               >
                 {predicting ? (
                   <>
@@ -444,35 +425,14 @@ export default function PredictionForm({ addToast }) {
                 )}
               </button>
               
-              <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 font-poppins">
-                {predicting ? 'AI models estimating demand...' : 'All parameters are cross-validated before estimation.'}
+              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 font-poppins">
+                {predicting ? 'AI models computing predictions...' : 'Strict dataset validation active.'}
               </span>
             </div>
 
           </form>
         )}
       </div>
-
-      {/* Progress animation loader during prediction */}
-      <AnimatePresence>
-        {predicting && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="glass p-8 rounded-3xl text-center flex flex-col items-center justify-center gap-4 mt-4 shadow-xl border border-white/20"
-          >
-            <div className="w-14 h-14 relative flex items-center justify-center">
-              <div className="w-14 h-14 rounded-full border-4 border-primary/20 absolute" />
-              <div className="w-14 h-14 rounded-full border-4 border-primary border-t-transparent animate-spin absolute" />
-            </div>
-            <h4 className="text-base font-bold text-text-primary dark:text-white font-poppins">Computing AI Demand &amp; Risk Metrics...</h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm leading-relaxed">
-              Evaluating input parameters against RandomForest models, calculating target demand profiles, and generating yield risk analysis.
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Prediction Results Block */}
       <AnimatePresence>

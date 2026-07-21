@@ -111,9 +111,24 @@ def get_crops():
 def get_seasons():
     return jsonify(seasons_list)
 
+@app.route("/rainfall/<state>/<district>", methods=["GET"])
 @app.route("/rainfall/<district>", methods=["GET"])
-def get_rainfall(district):
-    # Try case-insensitive lookup
+def get_rainfall(district, state=None):
+    # Try exact state + district match first
+    if state:
+        key = (state.lower().strip(), district.lower().strip())
+        if key in district_metadata:
+            meta = district_metadata[key]
+            return jsonify({
+                "state": state,
+                "district": district,
+                "monthly_rainfall": meta["monthly_rainfall"],
+                "population": meta["population"],
+                "growth": meta["growth"],
+                "literacy": meta["literacy"]
+            })
+
+    # Fallback case-insensitive district lookup
     for dist, rain in district_rainfall.items():
         if dist.lower() == district.lower():
             pop, growth, literacy = 1800000, 15.0, 70.0
