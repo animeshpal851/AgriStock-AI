@@ -1,6 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+/* Enable class-based dark mode in Tailwind CSS v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: #D9903D;
   --color-secondary: #FFF8EF;
@@ -38,7 +41,7 @@ body {
 }
 
 .dark body {
-  background: #0F1117;
+  background: radial-gradient(circle at 50% 50%, #161A24 0%, #0F1117 100%);
   color: #FFFFFF;
 }
 
